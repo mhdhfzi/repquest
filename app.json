@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "RepQuest",
+    "slug": "repquest",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "repquest",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0C0F",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.hafizi.repquest"
+    },
+    "android": {
+      "package": "com.hafizi.repquest",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0C0F",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B0C0F",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      "expo-sharing",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RepQuest uses your photos so you can add progress photos.",
+          "cameraPermission": "RepQuest uses the camera so you can take progress photos.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
