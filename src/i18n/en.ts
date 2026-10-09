@@ -413,7 +413,7 @@ export const en = {
   'profile.langSystem': 'Device',
   'profile.reset': 'Reset all data',
   'profile.resetTitle': 'Reset everything?',
-  'profile.resetBody': 'This deletes all workouts, XP and settings on this device.',
+  'profile.resetBody': 'This deletes all workouts, XP and settings on this device, and in your account if you’re signed in.',
   'profile.resetConfirm': 'Reset',
 
   // Reminders
@@ -503,6 +503,25 @@ export const en = {
   'account.signOutTitle': 'Sign out?',
   'account.signOutBody': 'Your workouts stay on this phone. Sign in again any time.',
   'account.syncNote': 'Cloud sync isn’t on yet. Your data is saved on this phone.',
+
+  // Cloud sync & Google
+  'auth.google': 'Continue with Google',
+  'auth.or': 'or',
+  'auth.errGoogleOff': 'Google sign-in isn’t switched on yet. Use email for now.',
+  'sync.synced': 'Synced {{when}}',
+  'sync.justNow': 'just now',
+  'sync.minutesAgo': '{{n}} min ago',
+  'sync.hoursAgo': '{{n}} h ago',
+  'sync.waiting': 'Waiting to sync…',
+  'sync.syncing': 'Syncing…',
+  'sync.error': 'Couldn’t sync. We’ll try again when you’re online.',
+  'sync.noTable': 'Cloud storage isn’t set up yet. Run the SQL file in Supabase.',
+  'sync.now': 'Sync now',
+  'sync.conflictTitle': 'Which data should we keep?',
+  'sync.conflictBody': 'Your account and this phone both have training data. Pick one to keep. The other will be replaced.',
+  'sync.useCloud': 'Use account data',
+  'sync.useLocal': 'Use this phone’s data',
+  'account.syncInfo': 'Workouts, XP, PRs and settings sync to your account. Photos stay on this phone.',
 
   // Onboarding
   'onb.tagline': 'Train with a plan, level up every day.',

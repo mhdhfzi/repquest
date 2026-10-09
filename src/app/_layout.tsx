@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { C } from '@/constants/theme';
+import { useCloudSync } from '@/hooks/use-cloud-sync';
 import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { configureNotifications } from '@/lib/reminders';
 import { useApp } from '@/stores/app-store';
@@ -39,6 +40,7 @@ export default function RootLayout() {
 
 function AppStack({ loggedIn, onboarded }: { loggedIn: boolean; onboarded: boolean }) {
   useReminderSync();
+  useCloudSync();
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.bg }}>

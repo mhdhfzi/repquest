@@ -3,14 +3,14 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { AuthLayout, Field, FormMessage, Headline, PrimaryButton, SwitchRow } from '@/components/auth-ui';
+import { AuthLayout, Field, FormMessage, GoogleButton, Headline, OrDivider, PrimaryButton, SwitchRow } from '@/components/auth-ui';
 import { INTRO_MS, IntroLift } from '@/components/intro-lift';
 import { Icon, I } from '@/components/ui/icon';
 import { PressableScale } from '@/components/ui/pressable-scale';
 import { Txt } from '@/components/ui/text';
 import { C, F, S } from '@/constants/theme';
 import { useT } from '@/i18n';
-import { authErrorText, isEmail, signIn } from '@/lib/auth';
+import { authErrorText, isEmail, signIn, signInWithGoogle } from '@/lib/auth';
 import { supabaseConfigured } from '@/lib/supabase';
 import { useApp } from '@/stores/app-store';
 
@@ -30,6 +30,19 @@ export default function Login() {
     introPlayed = true;
     setIntro(false);
   }, []);
+
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const google = async () => {
+    setGoogleBusy(true);
+    setError(null);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(authErrorText(t, e));
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!isEmail(email)) return setError(t('auth.badEmail'));
@@ -108,6 +121,8 @@ export default function Login() {
           </PressableScale>
           <FormMessage text={error} />
           <PrimaryButton title={t('auth.login')} onPress={submit} busy={busy} disabled={!supabaseConfigured} />
+          <OrDivider />
+          <GoogleButton onPress={google} busy={googleBusy} disabled={!supabaseConfigured} />
           <SwitchRow prompt={t('auth.noAccount')} action={t('auth.create')} onPress={() => router.push('/sign-up')} />
         </Animated.View>
 

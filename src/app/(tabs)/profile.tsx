@@ -14,6 +14,7 @@ import { C, R, S } from '@/constants/theme';
 import { useT, type LangPref, type TFn, type TKey } from '@/i18n';
 import { equipLabel, splitName, titleLabel } from '@/i18n/labels';
 import { signOut } from '@/lib/auth';
+import { runSync, useSyncStatus } from '@/lib/sync';
 import { BackupError, exportBackup, exportSetsCsv, pickBackup } from '@/lib/backup';
 import { confirm, notify } from '@/lib/confirm';
 import { formatShortDate, formatTime, weekdayShort } from '@/lib/date';
@@ -392,9 +393,21 @@ function ToggleRow({
   );
 }
 
+function syncLabel(t: TFn, status: string, lastSyncedAt: number | null): string {
+  if (status === 'syncing') return t('sync.syncing');
+  if (status === 'no-table') return t('sync.noTable');
+  if (status === 'error') return t('sync.error');
+  if (!lastSyncedAt) return t('sync.waiting');
+  const mins = Math.floor((Date.now() - lastSyncedAt) / 60000);
+  const when = mins < 1 ? t('sync.justNow') : mins < 60 ? t('sync.minutesAgo', { n: mins }) : t('sync.hoursAgo', { n: Math.floor(mins / 60) });
+  return t('sync.synced', { when });
+}
+
 function Account({ t }: { t: TFn }) {
   const email = useAuth((s) => s.session?.user.email);
+  const userId = useAuth((s) => s.session?.user.id);
   const setGuest = useApp((s) => s.setGuest);
+  const { status, lastSyncedAt } = useSyncStatus();
 
   if (!email) {
     return (
@@ -409,7 +422,24 @@ function Account({ t }: { t: TFn }) {
       <Txt variant="bodyStrong" numberOfLines={1}>
         {t('account.signedInAs', { email })}
       </Txt>
-      <Txt variant="caption">{t('account.syncNote')}</Txt>
+      <View style={styles.syncRow}>
+        <Icon
+          name={status === 'error' || status === 'no-table' ? I.info : I.check}
+          size={14}
+          color={status === 'error' || status === 'no-table' ? C.danger : C.accent}
+        />
+        <Txt variant="caption" color={status === 'error' || status === 'no-table' ? C.danger : C.text} style={styles.flex}>
+          {syncLabel(t, status, lastSyncedAt)}
+        </Txt>
+        {userId ? (
+          <PressableScale onPress={() => runSync(userId)} hitSlop={8} accessibilityRole="button" disabled={status === 'syncing'}>
+            <Txt variant="caption" color={C.accent} style={styles.bold}>
+              {t('sync.now')}
+            </Txt>
+          </PressableScale>
+        ) : null}
+      </View>
+      <Txt variant="caption">{t('account.syncInfo')}</Txt>
       <Button
         title={t('account.signOut')}
         kind="secondary"
@@ -517,5 +547,6 @@ const styles = StyleSheet.create({
   days: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: C.border },
   data: { gap: S.sm },
+  syncRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   reset: { marginTop: S.xxl * 1.5 },
 });

@@ -12,6 +12,7 @@ RepQuest suggests which muscles to train today, shows you how to do each exercis
 | Area | What works |
 |---|---|
 | **Login** | Lifting intro animation, then email/password sign-in, sign-up and password reset via Supabase; or use the app without an account |
+| **Cloud sync** | Signed-in accounts sync workouts, XP, PRs and settings to Supabase (photos stay on the phone); asks which copy to keep if both changed |
 | **Onboarding** | Name → training split → equipment, with animated step transitions |
 | **Today** | Recovery-aware daily suggestion (PPL / Upper-Lower / Full Body / Body Part / Two Muscles a Day), readiness %, body map of target muscles, auto-built exercise list, switch focus, rest-day mode |
 | **Library** | 112 curated exercises across 11 muscle groups · search · muscle & equipment filters · favourites · **tap-a-muscle body map filter** |
@@ -43,7 +44,7 @@ npm install
 npx expo start
 ```
 
-**Login setup:** copy `.env.example` to `.env.local` and fill in your Supabase project URL and publishable key (Supabase → Connect). Without it the app still runs; the login page offers “Use without an account”.
+**Login setup:** copy `.env.example` to `.env.local` and fill in your Supabase project URL and publishable key (Supabase → Connect). Without it the app still runs; the login page offers “Use without an account”. For cloud sync, run [`supabase/migrations/0001_user_data.sql`](supabase/migrations/0001_user_data.sql) once in Supabase → SQL Editor.
 
 Scan the QR code with Expo Go (Android) or the Camera app (iOS). Every library used is supported by Expo Go, so no custom build is needed to try it.
 

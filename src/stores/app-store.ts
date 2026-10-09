@@ -22,6 +22,17 @@ import type {
   XpLine,
 } from '@/types';
 
+export interface SyncMeta {
+  /** Account this phone's data was last synced with. */
+  ownerId?: string;
+  /** Server time of the cloud copy we last matched. */
+  cloudSyncedAt?: number;
+  /** Phone time of that sync. */
+  localSyncedAt?: number;
+  /** Phone time of the latest change to synced data. */
+  localChangedAt?: number;
+}
+
 interface StartOptions {
   focus: string;
   groups: MuscleGroupId[];
@@ -49,6 +60,8 @@ interface AppState {
   customExercises: Exercise[];
   /** Chose "Use without an account" on the login page. */
   guest: boolean;
+  /** Bookkeeping for cloud sync (never synced or backed up itself). */
+  syncMeta: SyncMeta;
   bodyStats: BodyStat[];
   active: ActiveWorkout | null;
   lastResult: WorkoutResult | null;
@@ -59,6 +72,13 @@ interface AppState {
   /** Save a custom exercise list for a split day, or `null` to go back to the suggestion. */
   setCustomPlan: (key: string, exerciseIds: string[] | null) => void;
   setGuest: (guest: boolean) => void;
+  /** Replace synced data with the account's copy, keeping this phone's photos and running workout. */
+  applyCloud: (data: PersistedData) => void;
+  /**
+   * Record a finished sync for `ownerId`. `cloudAt` is the server's timestamp for that copy;
+   * `localAt` is when this phone's data was captured, so edits made mid-upload still count as unsynced.
+   */
+  markSynced: (ownerId: string, cloudAt: number, localAt: number) => void;
   /** Create or update one of your own exercises. */
   saveCustomExercise: (exercise: Exercise) => void;
   /** Hide a custom exercise and take it out of plans and favourites; history keeps its name. */
@@ -113,6 +133,7 @@ const INITIAL = {
   customPlans: {} as Record<string, string[]>,
   customExercises: [] as Exercise[],
   guest: false,
+  syncMeta: {} as SyncMeta,
   bodyStats: [] as BodyStat[],
   active: null as ActiveWorkout | null,
   lastResult: null as WorkoutResult | null,
@@ -121,9 +142,14 @@ const INITIAL = {
 /** Identifies one day of one split, e.g. "ppl:0" for Push. */
 export const planKey = (splitId: string, dayIndex: number) => `${splitId}:${dayIndex}`;
 
-/** Everything that is saved to the device and included in backups. */
-export type PersistedData = Omit<typeof INITIAL, 'active' | 'lastResult'>;
-export const BACKUP_KEYS = Object.keys(INITIAL).filter((k) => k !== 'active' && k !== 'lastResult') as (keyof PersistedData)[];
+// Saved on the phone but not part of your training data (not backed up or synced).
+const DEVICE_ONLY = ['active', 'lastResult', 'guest', 'syncMeta'] as const;
+
+/** Your training data: what backups contain and what cloud sync uploads. */
+export type PersistedData = Omit<typeof INITIAL, (typeof DEVICE_ONLY)[number]>;
+export const BACKUP_KEYS = Object.keys(INITIAL).filter(
+  (k) => !(DEVICE_ONLY as readonly string[]).includes(k),
+) as (keyof PersistedData)[];
 
 /** Pre-fill sets from the last time this exercise was logged, so you know what to beat. */
 function seedSets(exerciseId: string, workouts: WorkoutLog[]): SetEntry[] {
@@ -198,6 +224,20 @@ export const useApp = create<AppState>()(
           return { customPlans };
         }),
       setGuest: (guest) => set({ guest }),
+      applyCloud: (data) =>
+        set((s) => {
+          // Photos are files on this phone, so keep local ones for entries that still exist.
+          const bodyPhotos = new Map(s.bodyStats.map((b) => [b.id, b.photoUri]));
+          const exercisePhotos = new Map(s.customExercises.map((e) => [e.id, e.photoUri]));
+          return {
+            ...data,
+            profile: { ...DEFAULT_PROFILE, ...data.profile, avatarUri: s.profile.avatarUri },
+            bodyStats: (data.bodyStats ?? []).map((b) => ({ ...b, photoUri: bodyPhotos.get(b.id) ?? null })),
+            customExercises: (data.customExercises ?? []).map((e) => ({ ...e, photoUri: exercisePhotos.get(e.id) ?? null })),
+          };
+        }),
+      markSynced: (ownerId, cloudAt, localAt) =>
+        set((s) => ({ syncMeta: { ...s.syncMeta, ownerId, cloudSyncedAt: cloudAt, localSyncedAt: localAt } })),
       saveCustomExercise: (exercise) =>
         set((s) => {
           const exists = s.customExercises.some((e) => e.id === exercise.id);
@@ -407,16 +447,20 @@ export const useApp = create<AppState>()(
       deleteBodyStat: (id) => set((s) => ({ bodyStats: s.bodyStats.filter((b) => b.id !== id) })),
 
       restoreBackup: (data) =>
-        set({
+        set((s) => ({
           ...INITIAL,
           ...data,
+          guest: s.guest,
+          syncMeta: { ...s.syncMeta, localChangedAt: Date.now() },
           profile: { ...DEFAULT_PROFILE, ...data.profile, onboarded: true, avatarUri: null },
           // Photos live outside the backup, so restored entries never point at missing files.
           bodyStats: (data.bodyStats ?? []).map((b) => ({ ...b, photoUri: null })),
           customExercises: (data.customExercises ?? []).map((e) => ({ ...e, photoUri: null })),
-        }),
+        })),
 
-      resetAll: () => set({ ...INITIAL }),
+      // Keeps login state, and marks the (now empty) data as changed so a signed-in account is reset too.
+      resetAll: () =>
+        set((s) => ({ ...INITIAL, guest: s.guest, syncMeta: { ...s.syncMeta, localChangedAt: Date.now() } })),
     }),
     {
       name: 'repquest-v1',
@@ -442,6 +486,11 @@ export const useApp = create<AppState>()(
 registerCustomExercises(useApp.getState().customExercises);
 useApp.subscribe((s, prev) => {
   if (s.customExercises !== prev.customExercises) registerCustomExercises(s.customExercises);
+  // Note when training data changes so cloud sync knows to upload. Loading saved data at
+  // startup isn't a change, so wait until the store has finished hydrating.
+  if (s.hydrated && prev.hydrated && BACKUP_KEYS.some((k) => s[k] !== prev[k])) {
+    useApp.setState({ syncMeta: { ...s.syncMeta, localChangedAt: Date.now() } });
+  }
 });
 
 const markHydrated = () => {

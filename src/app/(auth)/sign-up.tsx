@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { AuthLayout, Field, FormMessage, Headline, PrimaryButton, SwitchRow } from '@/components/auth-ui';
+import { AuthLayout, Field, FormMessage, GoogleButton, Headline, OrDivider, PrimaryButton, SwitchRow } from '@/components/auth-ui';
 import { I } from '@/components/ui/icon';
 import { Txt } from '@/components/ui/text';
 import { C, S } from '@/constants/theme';
 import { useT } from '@/i18n';
-import { authErrorText, isEmail, signUp } from '@/lib/auth';
+import { authErrorText, isEmail, signInWithGoogle, signUp } from '@/lib/auth';
 import { useApp } from '@/stores/app-store';
 
 export default function SignUp() {
@@ -20,6 +20,19 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const google = async () => {
+    setGoogleBusy(true);
+    setError(null);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      setError(authErrorText(t, e));
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!name.trim()) return setError(t('auth.needName'));
@@ -101,6 +114,8 @@ export default function SignUp() {
         </View>
         <FormMessage text={error} />
         <PrimaryButton title={t('auth.create')} onPress={submit} busy={busy} />
+        <OrDivider />
+        <GoogleButton onPress={google} busy={googleBusy} />
         <SwitchRow prompt={t('auth.haveAccount')} action={t('auth.login')} onPress={() => router.back()} />
       </Animated.View>
     </AuthLayout>

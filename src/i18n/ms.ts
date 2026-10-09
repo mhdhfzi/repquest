@@ -413,7 +413,7 @@ export const ms: Record<TKey, Entry> = {
   'profile.langSystem': 'Peranti',
   'profile.reset': 'Set semula semua data',
   'profile.resetTitle': 'Set semula semuanya?',
-  'profile.resetBody': 'Ini memadam semua latihan, XP dan tetapan dalam peranti ini.',
+  'profile.resetBody': 'Ini memadam semua latihan, XP dan tetapan dalam peranti ini, dan dalam akaun anda jika anda log masuk.',
   'profile.resetConfirm': 'Set semula',
 
   // Reminders
@@ -503,6 +503,25 @@ export const ms: Record<TKey, Entry> = {
   'account.signOutTitle': 'Log keluar?',
   'account.signOutBody': 'Latihan anda kekal dalam telefon ini. Log masuk semula bila-bila masa.',
   'account.syncNote': 'Penyegerakan awan belum aktif. Data anda disimpan dalam telefon ini.',
+
+  // Cloud sync & Google
+  'auth.google': 'Teruskan dengan Google',
+  'auth.or': 'atau',
+  'auth.errGoogleOff': 'Log masuk Google belum diaktifkan. Guna e-mel buat masa ini.',
+  'sync.synced': 'Disegerakkan {{when}}',
+  'sync.justNow': 'sebentar tadi',
+  'sync.minutesAgo': '{{n}} min lalu',
+  'sync.hoursAgo': '{{n}} jam lalu',
+  'sync.waiting': 'Menunggu untuk segerak…',
+  'sync.syncing': 'Menyegerak…',
+  'sync.error': 'Gagal menyegerak. Kami akan cuba lagi apabila anda dalam talian.',
+  'sync.noTable': 'Storan awan belum disediakan. Jalankan fail SQL dalam Supabase.',
+  'sync.now': 'Segerak sekarang',
+  'sync.conflictTitle': 'Data mana yang mahu disimpan?',
+  'sync.conflictBody': 'Akaun anda dan telefon ini kedua-duanya ada data latihan. Pilih satu untuk disimpan. Yang satu lagi akan diganti.',
+  'sync.useCloud': 'Guna data akaun',
+  'sync.useLocal': 'Guna data telefon ini',
+  'account.syncInfo': 'Latihan, XP, PR dan tetapan disegerakkan ke akaun anda. Foto kekal dalam telefon ini.',
 
   // Onboarding
   'onb.tagline': 'Berlatih dengan pelan, naik tahap setiap hari.',
