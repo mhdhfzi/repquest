@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeOut,
@@ -42,7 +42,7 @@ export default function ActiveWorkout() {
   const active = useApp((s) => s.active);
   const workouts = useApp((s) => s.workouts);
   const restSeconds = useApp((s) => s.profile.restSeconds);
-  const { addSet, removeSet, updateSet, removeExercise, discardWorkout, finishWorkout } = useApp.getState();
+  const { addSet, removeSet, updateSet, removeExercise, discardWorkout, finishWorkout, completeEnteredSets } = useApp.getState();
 
   const [now, setNow] = useState(() => Date.now());
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
@@ -64,19 +64,42 @@ export default function ActiveWorkout() {
 
   if (!active) return <View style={styles.root} />;
 
-  const finish = () => {
-    if (totals.done === 0) {
-      confirm(t('active.noSetsTitle'), t('active.noSetsBody'), t('active.discard'), () => {
-        discardWorkout();
-      });
-      return;
-    }
+  const complete = () => {
     finishing.current = true;
     const result = finishWorkout();
     if (result) {
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       router.replace('/workout/summary');
     }
+  };
+
+  const finish = () => {
+    // Sets with numbers typed in but never ticked are easy to miss — they don't count unless ticked.
+    const entered = active.exercises.flatMap((e) => e.sets).filter((x) => !x.done && (x.weight ?? 0) > 0 && (x.reps ?? 0) > 0).length;
+    if (entered) {
+      const countThem = () => {
+        completeEnteredSets();
+        complete();
+      };
+      if (Platform.OS === 'web') {
+        if (globalThis.confirm?.(`${t('active.unticked', { n: entered })}\n\n${t('active.untickedBody')}`)) countThem();
+        else if (totals.done) complete();
+        return;
+      }
+      Alert.alert(t('active.unticked', { n: entered }), t('active.untickedBody'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        ...(totals.done ? [{ text: t('active.leaveOut'), onPress: complete }] : []),
+        { text: t('active.countThem'), onPress: countThem },
+      ]);
+      return;
+    }
+    if (totals.done === 0) {
+      confirm(t('active.noSetsTitle'), t('active.noSetsBody'), t('active.discard'), () => {
+        discardWorkout();
+      });
+      return;
+    }
+    complete();
   };
 
   const close = () =>
@@ -164,8 +187,9 @@ export default function ActiveWorkout() {
                     const done = !set.done;
                     updateSet(exIndex, set.id, {
                       done,
-                      reps: set.reps ?? prev[i]?.reps ?? null,
-                      weight: set.weight ?? prev[i]?.weight ?? null,
+                      // Empty fields fall back to the set above, then to last session's numbers.
+                      reps: set.reps ?? we.sets[i - 1]?.reps ?? prev[i]?.reps ?? null,
+                      weight: set.weight ?? we.sets[i - 1]?.weight ?? prev[i]?.weight ?? null,
                     });
                     if (done) setRest({ endsAt: Date.now() + restSeconds * 1000, total: restSeconds });
                   }}

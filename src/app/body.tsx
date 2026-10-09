@@ -6,7 +6,9 @@ import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LineChart } from '@/components/charts';
+import { PhotoViewer } from '@/components/photo-viewer';
 import { Icon, I } from '@/components/ui/icon';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { Button, Card, IconButton, SectionHeader } from '@/components/ui/primitives';
 import { Txt } from '@/components/ui/text';
 import { C, R, S } from '@/constants/theme';
@@ -40,6 +42,7 @@ export default function BodyStats() {
   const [values, setValues] = useState<Record<Field, string>>({ weightKg: '', waistCm: '', chestCm: '', armCm: '' });
   const [photo, setPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   const last = stats[stats.length - 1];
   const weights = stats.filter((s) => s.weightKg !== null);
@@ -159,13 +162,18 @@ export default function BodyStats() {
           <>
             <SectionHeader title={t('body.photos')} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.photos}>
-              {photos.map((s) => (
-                <View key={s.id} style={styles.thumbWrap}>
+              {photos.map((s, i) => (
+                <PressableScale
+                  key={s.id}
+                  onPress={() => setViewing(i)}
+                  style={styles.thumbWrap}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={`${t('body.viewPhoto')}, ${formatShortDate(s.date)}`}>
                   <Image source={{ uri: s.photoUri! }} style={styles.thumb} contentFit="cover" transition={200} />
                   <Txt variant="caption" center>
                     {formatDayMonth(s.date)}
                   </Txt>
-                </View>
+                </PressableScale>
               ))}
             </ScrollView>
           </>
@@ -177,7 +185,18 @@ export default function BodyStats() {
             <Card style={styles.history}>
               {[...stats].reverse().map((s, i) => (
                 <Animated.View key={s.id} layout={LinearTransition} exiting={FadeOut} style={[styles.histRow, i > 0 && styles.divider]}>
-                  {s.photoUri ? <Image source={{ uri: s.photoUri }} style={styles.histThumb} contentFit="cover" /> : <View style={[styles.histThumb, styles.noThumb]}><Icon name={I.scale} size={14} color={C.textFaint} /></View>}
+                  {s.photoUri ? (
+                    <PressableScale
+                      onPress={() => setViewing(photos.findIndex((p) => p.id === s.id))}
+                      accessibilityRole="imagebutton"
+                      accessibilityLabel={t('body.viewPhoto')}>
+                      <Image source={{ uri: s.photoUri }} style={styles.histThumb} contentFit="cover" />
+                    </PressableScale>
+                  ) : (
+                    <View style={[styles.histThumb, styles.noThumb]}>
+                      <Icon name={I.scale} size={14} color={C.textFaint} />
+                    </View>
+                  )}
                   <View style={styles.flex}>
                     <Txt variant="bodyStrong">{s.weightKg !== null ? `${s.weightKg} kg` : '—'}</Txt>
                     <Txt variant="caption" numberOfLines={1}>
@@ -196,6 +215,7 @@ export default function BodyStats() {
           </>
         ) : null}
       </ScrollView>
+      {viewing !== null ? <PhotoViewer key={viewing} entries={photos} startIndex={viewing} onClose={() => setViewing(null)} /> : null}
     </>
   );
 }

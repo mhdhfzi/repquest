@@ -349,7 +349,11 @@ export const en = {
   'progress.thisWeek': 'This week',
   'progress.weekOf': 'Week of {{d}}',
   'progress.strength': 'Strength',
-  'progress.e1rmNote': 'Estimated 1-rep max from your best set each session.',
+  'progress.e1rmNote': 'Estimated 1-rep max: roughly the most you could lift once, worked out from your best set (weight × (1 + reps ÷ 30)). So 7 kg × 10 ≈ 9.3 kg.',
+  'progress.topNote': 'The heaviest weight you lifted each session, with the reps you did at that weight.',
+  'progress.modeTop': 'Heaviest weight',
+  'progress.modeE1rm': 'Est. 1-rep max',
+  'progress.bestSet': '{{w}} kg × {{reps}}',
   'progress.repsNote': 'Most reps in a single set each session.',
   'progress.strengthEmpty': 'Log a workout to start tracking strength per exercise.',
   'progress.prList': 'Personal records',
@@ -522,6 +526,18 @@ export const en = {
   'sync.useCloud': 'Use account data',
   'sync.useLocal': 'Use this phone’s data',
   'account.syncInfo': 'Workouts, XP, PRs and settings sync to your account. Photos stay on this phone.',
+
+  // Volume & photos
+  'active.unticked': '{{n}} sets not ticked',
+  'active.untickedBody': 'They have a weight and reps entered but aren’t ticked, so they won’t count toward your volume and XP. Count them as done?',
+  'active.countThem': 'Count them',
+  'active.leaveOut': 'Leave them out',
+  'summary.volumeHow': 'How your volume adds up',
+  'summary.volumeNote': 'Volume = weight × reps, added up over every ticked set. With dumbbells, it counts the weight of one dumbbell.',
+  'summary.setGroup': '{{n}} × {{reps}} reps @ {{w}} kg',
+  'summary.setGroupBw': '{{n}} × {{reps}} reps (bodyweight)',
+  'body.photoCount': '{{i}} of {{n}}',
+  'body.viewPhoto': 'View photo',
 
   // Onboarding
   'onb.tagline': 'Train with a plan, level up every day.',

@@ -90,6 +90,8 @@ interface AppState {
   addSet: (exIndex: number) => void;
   removeSet: (exIndex: number, setId: string) => void;
   updateSet: (exIndex: number, setId: string, patch: Partial<SetEntry>) => void;
+  /** Tick every unticked set that has a weight and reps entered. */
+  completeEnteredSets: () => void;
   discardWorkout: () => void;
   finishWorkout: () => WorkoutResult | null;
 
@@ -300,7 +302,39 @@ export const useApp = create<AppState>()(
 
       updateSet: (exIndex, setId, patch) =>
         set((s) =>
-          mapExercise(s, exIndex, (e) => ({ ...e, sets: e.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) })),
+          mapExercise(s, exIndex, (e) => {
+            const at = e.sets.findIndex((x) => x.id === setId);
+            return {
+              ...e,
+              sets: e.sets.map((x, i) => {
+                if (i === at) return { ...x, ...patch };
+                // Typing a weight or reps fills the empty, unticked sets below it, so one entry covers the exercise.
+                if (i > at && !x.done) {
+                  const fill: Partial<SetEntry> = {};
+                  // 0 counts as empty too (sets pre-filled from a bodyweight session).
+                  if (patch.weight != null && !x.weight) fill.weight = patch.weight;
+                  if (patch.reps != null && !x.reps) fill.reps = patch.reps;
+                  return { ...x, ...fill };
+                }
+                return x;
+              }),
+            };
+          }),
+        ),
+
+      completeEnteredSets: () =>
+        set((s) =>
+          s.active
+            ? {
+                active: {
+                  ...s.active,
+                  exercises: s.active.exercises.map((e) => ({
+                    ...e,
+                    sets: e.sets.map((x) => (!x.done && (x.weight ?? 0) > 0 && (x.reps ?? 0) > 0 ? { ...x, done: true } : x)),
+                  })),
+                },
+              }
+            : {},
         ),
 
       discardWorkout: () => set({ active: null }),

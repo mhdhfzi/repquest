@@ -11,11 +11,13 @@ import { Button, Card, ProgressBar, StatTile } from '@/components/ui/primitives'
 import { Txt } from '@/components/ui/text';
 import { ACHIEVEMENTS, FREEZE } from '@/constants/progression';
 import { C, F, R, S } from '@/constants/theme';
-import { useT, type TKey } from '@/i18n';
+import { useT, type TFn, type TKey } from '@/i18n';
 import { focusLabel, titleLabel } from '@/i18n/labels';
 import { formatDuration, formatKg } from '@/lib/date';
+import { getExercise } from '@/lib/exercises';
 import { levelInfo } from '@/lib/progression';
 import { useApp } from '@/stores/app-store';
+import type { WorkoutExercise } from '@/types';
 
 function useCountUp(target: number, delay = 500, duration = 900) {
   const [v, setV] = useState(0);
@@ -75,6 +77,10 @@ export default function Summary() {
           <StatTile label={t('summary.time')} value={formatDuration(log.endedAt - log.startedAt)} icon={I.timer} tint={C.info} />
           <StatTile label={t('summary.sets')} value={String(log.setsDone)} icon={I.check} />
           <StatTile label={t('summary.volume')} value={formatKg(log.volume)} icon={I.scale} tint={C.flame} />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <VolumeBreakdown t={t} exercises={log.exercises} total={log.volume} />
         </Animated.View>
 
         {leveledUp ? (
@@ -188,7 +194,63 @@ export default function Summary() {
   );
 }
 
+const fmtKg = (n: number) => String(Math.round(n * 10) / 10);
+
+/** Groups identical sets: "3 × 6 reps @ 4.5 kg". */
+function setGroups(t: TFn, e: WorkoutExercise): string {
+  const groups: { w: number; reps: number; n: number }[] = [];
+  for (const s of e.sets) {
+    const w = s.weight ?? 0;
+    const reps = s.reps ?? 0;
+    const last = groups[groups.length - 1];
+    if (last && last.w === w && last.reps === reps) last.n++;
+    else groups.push({ w, reps, n: 1 });
+  }
+  return groups
+    .map((g) => (g.w > 0 ? t('summary.setGroup', { n: g.n, reps: g.reps, w: fmtKg(g.w) }) : t('summary.setGroupBw', { n: g.n, reps: g.reps })))
+    .join(' + ');
+}
+
+/** Shows where the volume number comes from, exercise by exercise. */
+function VolumeBreakdown({ t, exercises, total }: { t: TFn; exercises: WorkoutExercise[]; total: number }) {
+  return (
+    <Card style={styles.breakdown}>
+      <Txt variant="label">{t('summary.volumeHow')}</Txt>
+      {exercises.map((e, i) => {
+        const vol = e.sets.reduce((n, s) => n + (s.weight ?? 0) * (s.reps ?? 0), 0);
+        return (
+          <View key={`${e.exerciseId}-${i}`} style={styles.bdRow}>
+            <View style={styles.flex}>
+              <Txt variant="bodyStrong" numberOfLines={1}>
+                {getExercise(e.exerciseId)?.name ?? e.exerciseId}
+              </Txt>
+              <Txt variant="caption">{setGroups(t, e)}</Txt>
+            </View>
+            <Txt variant="bodyStrong" color={vol > 0 ? C.text : C.textFaint}>
+              {vol > 0 ? `${fmtKg(vol)} kg` : '—'}
+            </Txt>
+          </View>
+        );
+      })}
+      <View style={[styles.bdRow, styles.bdTotal]}>
+        <Txt variant="bodyStrong" style={styles.flex}>
+          {t('summary.volume')}
+        </Txt>
+        <Txt variant="bodyStrong" color={C.flame}>
+          {fmtKg(total)} kg
+        </Txt>
+      </View>
+      <Txt variant="caption" color={C.textFaint}>
+        {t('summary.volumeNote')}
+      </Txt>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  breakdown: { gap: S.md },
+  bdRow: { flexDirection: 'row', alignItems: 'center', gap: S.md },
+  bdTotal: { paddingTop: S.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border },
   root: { flex: 1, backgroundColor: C.bg },
   centerFill: { alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: S.page, gap: S.lg },

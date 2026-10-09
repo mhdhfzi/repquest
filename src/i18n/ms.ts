@@ -349,7 +349,11 @@ export const ms: Record<TKey, Entry> = {
   'progress.thisWeek': 'Minggu ini',
   'progress.weekOf': 'Minggu {{d}}',
   'progress.strength': 'Kekuatan',
-  'progress.e1rmNote': 'Anggaran 1-ulangan maksimum daripada set terbaik setiap sesi.',
+  'progress.e1rmNote': 'Anggaran 1-ulangan maksimum: lebih kurang berat paling tinggi yang boleh anda angkat sekali, dikira daripada set terbaik (berat × (1 + ulangan ÷ 30)). Contoh: 7 kg × 10 ≈ 9.3 kg.',
+  'progress.topNote': 'Berat paling tinggi yang anda angkat setiap sesi, bersama ulangan pada berat itu.',
+  'progress.modeTop': 'Berat tertinggi',
+  'progress.modeE1rm': 'Anggaran 1RM',
+  'progress.bestSet': '{{w}} kg × {{reps}}',
   'progress.repsNote': 'Ulangan terbanyak dalam satu set setiap sesi.',
   'progress.strengthEmpty': 'Rekod latihan untuk mula menjejak kekuatan setiap senaman.',
   'progress.prList': 'Rekod peribadi',
@@ -522,6 +526,18 @@ export const ms: Record<TKey, Entry> = {
   'sync.useCloud': 'Guna data akaun',
   'sync.useLocal': 'Guna data telefon ini',
   'account.syncInfo': 'Latihan, XP, PR dan tetapan disegerakkan ke akaun anda. Foto kekal dalam telefon ini.',
+
+  // Volume & photos
+  'active.unticked': '{{n}} set belum ditanda',
+  'active.untickedBody': 'Set ini ada berat dan ulangan tetapi belum ditanda, jadi tidak dikira dalam isipadu dan XP anda. Kira sebagai selesai?',
+  'active.countThem': 'Kira',
+  'active.leaveOut': 'Abaikan',
+  'summary.volumeHow': 'Bagaimana isipadu anda dikira',
+  'summary.volumeNote': 'Isipadu = berat × ulangan, dijumlahkan untuk setiap set yang ditanda. Untuk dumbel, ia mengira berat satu dumbel.',
+  'summary.setGroup': '{{n}} × {{reps}} ulangan @ {{w}} kg',
+  'summary.setGroupBw': '{{n}} × {{reps}} ulangan (berat badan)',
+  'body.photoCount': '{{i}} daripada {{n}}',
+  'body.viewPhoto': 'Lihat foto',
 
   // Onboarding
   'onb.tagline': 'Berlatih dengan pelan, naik tahap setiap hari.',

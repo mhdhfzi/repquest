@@ -43,15 +43,35 @@ function weeklyTrend(t: TFn, workouts: WorkoutLog[], metric: Metric): Datum[] {
   });
 }
 
-/** Best set per session for one exercise: estimated 1RM when weighted, otherwise top reps. */
-function strengthSeries(workouts: WorkoutLog[], exerciseId: string): { data: Datum[]; weighted: boolean } {
+type StrengthMode = 'top' | 'e1rm';
+
+/**
+ * One point per session for an exercise:
+ * - `top`: the heaviest weight you actually lifted (ties go to the set with more reps)
+ * - `e1rm`: estimated one-rep max from your best set
+ * Bodyweight exercises chart the most reps in a set instead.
+ */
+function strengthSeries(t: TFn, workouts: WorkoutLog[], exerciseId: string, mode: StrengthMode): { data: Datum[]; weighted: boolean } {
   const sessions = workouts
     .map((w) => ({ w, e: w.exercises.find((x) => x.exerciseId === exerciseId) }))
     .filter((x) => x.e?.sets.length);
   const weighted = sessions.some(({ e }) => e!.sets.some((s) => (s.weight ?? 0) > 0));
   const data = sessions.map(({ w, e }) => {
-    const value = Math.max(...e!.sets.map((s) => (weighted ? estimate1RM(s.weight ?? 0, s.reps ?? 0) : (s.reps ?? 0))));
-    return { label: formatDayMonth(w.startedAt), detail: formatShortDate(w.startedAt), value: Math.round(value * 10) / 10 };
+    const sets = e!.sets.map((s) => ({ weight: s.weight ?? 0, reps: s.reps ?? 0 }));
+    const date = formatShortDate(w.startedAt);
+    if (!weighted) {
+      const reps = Math.max(...sets.map((s) => s.reps));
+      return { label: formatDayMonth(w.startedAt), detail: date, value: reps };
+    }
+    const score = (s: { weight: number; reps: number }) => (mode === 'top' ? s.weight * 1000 + s.reps : estimate1RM(s.weight, s.reps));
+    const best = sets.reduce((a, b) => (score(b) > score(a) ? b : a));
+    const value = mode === 'top' ? best.weight : estimate1RM(best.weight, best.reps);
+    // The readout names the actual set behind the point, e.g. "7 kg × 10 · Fri, 9 Oct".
+    return {
+      label: formatDayMonth(w.startedAt),
+      detail: `${t('progress.bestSet', { w: best.weight, reps: best.reps })} · ${date}`,
+      value: Math.round(value * 10) / 10,
+    };
   });
   return { data, weighted };
 }
@@ -73,6 +93,7 @@ export default function Progress() {
   const lastWeight = [...bodyStats].reverse().find((b) => b.weightKg !== null);
   const [metric, setMetric] = useState<Metric>('volume');
   const [pickedExercise, setPickedExercise] = useState<string | null>(null);
+  const [strengthMode, setStrengthMode] = useState<StrengthMode>('top');
 
   const recovery = useMemo(() => computeRecovery(workouts), [workouts]);
   const streak = computeStreak(activeDayKeys(workouts.map((w) => w.startedAt), restDays, frozenDays), trainingDays);
@@ -108,7 +129,9 @@ export default function Progress() {
     return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
   }, [workouts]);
   const exerciseId = pickedExercise && topExercises.includes(pickedExercise) ? pickedExercise : topExercises[0];
-  const strength = useMemo(() => (exerciseId ? strengthSeries(workouts, exerciseId) : null), [workouts, exerciseId]);
+  // `lang` re-runs this so the readout text switches language too.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const strength = useMemo(() => (exerciseId ? strengthSeries(t, workouts, exerciseId, strengthMode) : null), [workouts, exerciseId, strengthMode, lang]);
 
   const recentPrs = Object.entries(prs)
     .sort((a, b) => b[1].date - a[1].date)
@@ -226,13 +249,30 @@ export default function Progress() {
                 <Chip key={id} label={getExercise(id)?.name ?? id} selected={id === exerciseId} onPress={() => setPickedExercise(id)} />
               ))}
             </View>
+            {strength.weighted ? (
+              <View style={styles.modeRow}>
+                {(['top', 'e1rm'] as const).map((m) => (
+                  <PressableScale
+                    key={m}
+                    haptic
+                    onPress={() => setStrengthMode(m)}
+                    style={[styles.mode, strengthMode === m && styles.modeOn]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: strengthMode === m }}>
+                    <Txt variant="caption" color={strengthMode === m ? C.accent : C.textMuted} style={styles.bold}>
+                      {m === 'top' ? t('progress.modeTop') : t('progress.modeE1rm')}
+                    </Txt>
+                  </PressableScale>
+                ))}
+              </View>
+            ) : null}
             <LineChart
-              key={exerciseId}
+              key={`${exerciseId}-${strengthMode}`}
               data={strength.data}
               format={(n) => (strength.weighted ? `${n} kg` : t('common.reps', { n: Math.round(n) }))}
             />
             <Txt variant="caption">
-              {strength.weighted ? t('progress.e1rmNote') : t('progress.repsNote')}
+              {!strength.weighted ? t('progress.repsNote') : strengthMode === 'top' ? t('progress.topNote') : t('progress.e1rmNote')}
             </Txt>
           </Card>
         ) : (
@@ -343,6 +383,9 @@ const styles = StyleSheet.create({
   barVal: { width: 56, textAlign: 'right', fontVariant: ['tabular-nums'] },
   note: { marginTop: S.xs },
   chartCard: { gap: S.lg },
+  modeRow: { flexDirection: 'row', gap: 6, marginTop: -S.sm },
+  mode: { paddingHorizontal: 10, height: 28, justifyContent: 'center', borderRadius: 8 },
+  modeOn: { backgroundColor: C.accentSoft },
   bodyCard: { flexDirection: 'row', alignItems: 'center', gap: S.md },
   bodyIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(124,199,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   bold: { fontWeight: '700' },
