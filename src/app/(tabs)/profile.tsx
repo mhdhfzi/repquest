@@ -13,6 +13,7 @@ import { SPLITS } from '@/constants/splits';
 import { C, R, S } from '@/constants/theme';
 import { useT, type LangPref, type TFn, type TKey } from '@/i18n';
 import { equipLabel, splitName, titleLabel } from '@/i18n/labels';
+import { signOut } from '@/lib/auth';
 import { BackupError, exportBackup, exportSetsCsv, pickBackup } from '@/lib/backup';
 import { confirm, notify } from '@/lib/confirm';
 import { formatShortDate, formatTime, weekdayShort } from '@/lib/date';
@@ -20,6 +21,7 @@ import { levelInfo } from '@/lib/progression';
 import { deletePhoto, pickAvatar, type PhotoSource } from '@/lib/photos';
 import { remindersSupported, requestReminderPermission } from '@/lib/reminders';
 import { useApp } from '@/stores/app-store';
+import { useAuth } from '@/stores/auth-store';
 import type { Equipment, ReminderSettings } from '@/types';
 
 const REST_OPTIONS = [60, 90, 120, 180];
@@ -237,6 +239,9 @@ export default function Profile() {
         ))}
       </View>
 
+      <SectionHeader title={t('account.section')} />
+      <Account t={t} />
+
       <SectionHeader title={t('data.section')} />
       <DataActions t={t} />
 
@@ -384,6 +389,39 @@ function ToggleRow({
         accessibilityLabel={title}
       />
     </View>
+  );
+}
+
+function Account({ t }: { t: TFn }) {
+  const email = useAuth((s) => s.session?.user.email);
+  const setGuest = useApp((s) => s.setGuest);
+
+  if (!email) {
+    return (
+      <Card style={styles.data}>
+        <Txt variant="caption">{t('account.guest')}</Txt>
+        <Button title={t('account.signIn')} kind="secondary" icon={I.profile} onPress={() => setGuest(false)} />
+      </Card>
+    );
+  }
+  return (
+    <Card style={styles.data}>
+      <Txt variant="bodyStrong" numberOfLines={1}>
+        {t('account.signedInAs', { email })}
+      </Txt>
+      <Txt variant="caption">{t('account.syncNote')}</Txt>
+      <Button
+        title={t('account.signOut')}
+        kind="secondary"
+        icon={I.logout}
+        onPress={() =>
+          confirm(t('account.signOutTitle'), t('account.signOutBody'), t('account.signOut'), () => {
+            setGuest(false);
+            signOut();
+          })
+        }
+      />
+    </Card>
   );
 }
 

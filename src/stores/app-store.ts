@@ -47,6 +47,8 @@ interface AppState {
   /** Your own exercise list per split day, keyed by `planKey`. Absent = use the suggestion. */
   customPlans: Record<string, string[]>;
   customExercises: Exercise[];
+  /** Chose "Use without an account" on the login page. */
+  guest: boolean;
   bodyStats: BodyStat[];
   active: ActiveWorkout | null;
   lastResult: WorkoutResult | null;
@@ -56,6 +58,7 @@ interface AppState {
   toggleFavorite: (id: string) => void;
   /** Save a custom exercise list for a split day, or `null` to go back to the suggestion. */
   setCustomPlan: (key: string, exerciseIds: string[] | null) => void;
+  setGuest: (guest: boolean) => void;
   /** Create or update one of your own exercises. */
   saveCustomExercise: (exercise: Exercise) => void;
   /** Hide a custom exercise and take it out of plans and favourites; history keeps its name. */
@@ -109,6 +112,7 @@ const INITIAL = {
   favorites: [] as string[],
   customPlans: {} as Record<string, string[]>,
   customExercises: [] as Exercise[],
+  guest: false,
   bodyStats: [] as BodyStat[],
   active: null as ActiveWorkout | null,
   lastResult: null as WorkoutResult | null,
@@ -193,6 +197,7 @@ export const useApp = create<AppState>()(
           else delete customPlans[key];
           return { customPlans };
         }),
+      setGuest: (guest) => set({ guest }),
       saveCustomExercise: (exercise) =>
         set((s) => {
           const exists = s.customExercises.some((e) => e.id === exercise.id);

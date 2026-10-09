@@ -1,3 +1,4 @@
+import { BebasNeue_400Regular, useFonts } from '@expo-google-fonts/bebas-neue';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +9,7 @@ import { C } from '@/constants/theme';
 import { useReminderSync } from '@/hooks/use-reminder-sync';
 import { configureNotifications } from '@/lib/reminders';
 import { useApp } from '@/stores/app-store';
+import { useAuth } from '@/stores/auth-store';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 configureNotifications();
@@ -20,16 +22,22 @@ const theme = {
 export default function RootLayout() {
   const hydrated = useApp((s) => s.hydrated);
   const onboarded = useApp((s) => s.profile.onboarded);
+  const guest = useApp((s) => s.guest);
+  const authReady = useAuth((s) => s.ready);
+  const signedIn = useAuth((s) => !!s.session && !s.hold);
+  const [fontsLoaded, fontError] = useFonts({ BebasNeue_400Regular });
+  // A missing font shouldn't keep the app on the splash screen; it falls back to the system font.
+  const ready = hydrated && authReady && (fontsLoaded || !!fontError);
 
   useEffect(() => {
-    if (hydrated) SplashScreen.hideAsync().catch(() => {});
-  }, [hydrated]);
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
 
-  if (!hydrated) return null;
-  return <AppStack onboarded={onboarded} />;
+  if (!ready) return null;
+  return <AppStack loggedIn={signedIn || guest} onboarded={onboarded} />;
 }
 
-function AppStack({ onboarded }: { onboarded: boolean }) {
+function AppStack({ loggedIn, onboarded }: { loggedIn: boolean; onboarded: boolean }) {
   useReminderSync();
 
   return (
@@ -45,7 +53,7 @@ function AppStack({ onboarded }: { onboarded: boolean }) {
             headerShadowVisible: false,
             headerBackButtonDisplayMode: 'minimal',
           }}>
-          <Stack.Protected guard={onboarded}>
+          <Stack.Protected guard={loggedIn && onboarded}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="exercise/[id]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="exercise/edit" options={{ headerShown: true }} />
@@ -57,8 +65,11 @@ function AppStack({ onboarded }: { onboarded: boolean }) {
               options={{ presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }}
             />
           </Stack.Protected>
-          <Stack.Protected guard={!onboarded}>
+          <Stack.Protected guard={loggedIn && !onboarded}>
             <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={!loggedIn}>
+            <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
           </Stack.Protected>
         </Stack>
       </ThemeProvider>

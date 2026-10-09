@@ -25,7 +25,8 @@ export default function Onboarding() {
   const complete = useApp((s) => s.completeOnboarding);
   const updateProfile = useApp((s) => s.updateProfile);
   const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
+  // Pre-filled when you entered your name while creating an account.
+  const [name, setName] = useState(() => useApp.getState().profile.name);
   const [splitId, setSplitId] = useState<SplitId>('ppl');
   const [equipment, setEquipment] = useState<Equipment[]>(['bodyweight', 'dumbbell']);
 

@@ -50,6 +50,8 @@ export const R = {
 } as const;
 
 export const F = {
+  /** Tall condensed headline face (Bebas Neue), loaded in the root layout. */
+  poster: 'BebasNeue_400Regular',
   display: Platform.select({
     ios: 'ui-rounded',
     web: 'ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',

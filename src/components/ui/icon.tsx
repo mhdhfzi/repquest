@@ -63,6 +63,11 @@ export const I = {
   table: { ios: 'tablecells', android: 'table_chart' },
   ruler: { ios: 'ruler', android: 'straighten' },
   pencil: { ios: 'pencil', android: 'edit' },
+  mail: { ios: 'envelope', android: 'mail' },
+  eye: { ios: 'eye', android: 'visibility' },
+  eyeOff: { ios: 'eye.slash', android: 'visibility_off' },
+  code: { ios: 'number', android: 'pin' },
+  logout: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout' },
   target: { ios: 'scope', android: 'my_location' },
   chart: { ios: 'chart.line.uptrend.xyaxis', android: 'trending_up' },
 } satisfies Record<string, IconName>;
